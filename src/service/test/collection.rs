@@ -5,6 +5,8 @@ use crate::app::index;
 use crate::service::test::{add_trailing_slash, constants::*, protocol, ServiceType, TestService};
 use crate::test_name;
 
+const TEST_ALL_SONGS_COUNT: usize = 13;
+
 #[test]
 fn browse_requires_auth() {
 	let mut service = ServiceType::new(&test_name!());
@@ -76,7 +78,7 @@ fn flatten_root() {
 	let response = service.fetch_json::<_, Vec<index::Song>>(&request);
 	assert_eq!(response.status(), StatusCode::OK);
 	let entries = response.body();
-	assert_eq!(entries.len(), 13);
+	assert_eq!(entries.len(), TEST_ALL_SONGS_COUNT);
 }
 
 #[test]
@@ -91,7 +93,7 @@ fn flatten_directory() {
 	let response = service.fetch_json::<_, Vec<index::Song>>(&request);
 	assert_eq!(response.status(), StatusCode::OK);
 	let entries = response.body();
-	assert_eq!(entries.len(), 13);
+	assert_eq!(entries.len(), TEST_ALL_SONGS_COUNT);
 }
 
 #[test]
@@ -218,6 +220,69 @@ fn search_with_query() {
 	match results[0] {
 		index::CollectionFile::Song(ref s) => {
 			assert_eq!(s.title, Some("Beyond The Door".into()))
+		}
+		_ => panic!(),
+	}
+}
+
+#[test]
+fn search_extended_tags() {
+	let mut service = ServiceType::new(&test_name!());
+	service.complete_initial_setup();
+	service.login_admin();
+	service.index();
+	service.login();
+
+	let request = protocol::search("Electron");
+	let response = service.fetch_json::<_, Vec<index::CollectionFile>>(&request);
+	let results = response.body();
+	assert_eq!(results.len(), 8);
+	match results[0] {
+		index::CollectionFile::Song(ref s) => {
+			assert_eq!(s.title, Some("ピクニック (Picnic) (Remix)".into()))
+		}
+		_ => panic!(),
+	}
+}
+
+#[test]
+fn search_with_query_one_field() {
+	let mut service = ServiceType::new(&test_name!());
+	service.complete_initial_setup();
+	service.login_admin();
+	service.index();
+	service.login();
+
+	let request = protocol::search("album:Remixe");
+	let response = service.fetch_json::<_, Vec<index::CollectionFile>>(&request);
+	let results = response.body();
+	assert_eq!(results.len(), 1);
+	match results[0] {
+		index::CollectionFile::Song(ref s) => {
+			assert_eq!(s.title, Some("ピクニック (Picnic) (Remix)".into()))
+		}
+		_ => panic!(),
+	}
+}
+
+#[test]
+fn search_with_query_multiple_fields() {
+	let mut service = ServiceType::new(&test_name!());
+	service.complete_initial_setup();
+	service.login_admin();
+	service.index();
+	service.login();
+
+	let request = protocol::search("title:game genre:'Electronic\u{0}Chiptune'");
+	let response = service.fetch_json::<_, Vec<index::CollectionFile>>(&request);
+	let results = response.body();
+	assert_eq!(results.len(), 1);
+	match results[0] {
+		index::CollectionFile::Song(ref s) => {
+			assert_eq!(
+				s.title,
+				Some("疲れた顔(ゲームは終わらない) (Tired Face (The Game Never Ends))".into())
+			)
 		}
 		_ => panic!(),
 	}

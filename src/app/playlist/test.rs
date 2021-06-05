@@ -7,6 +7,7 @@ const TEST_USER: &str = "test_user";
 const TEST_PASSWORD: &str = "password";
 const TEST_PLAYLIST_NAME: &str = "Chill & Grill";
 const TEST_MOUNT_NAME: &str = "root";
+const TEST_ALL_SONGS_COUNT: usize = 13;
 
 #[test]
 fn save_playlist_golden_path() {
@@ -39,7 +40,7 @@ fn save_playlist_is_idempotent() {
 		.into_iter()
 		.map(|s| s.path)
 		.collect();
-	assert_eq!(playlist_content.len(), 13);
+	assert_eq!(playlist_content.len(), TEST_ALL_SONGS_COUNT);
 
 	ctx.playlist_manager
 		.save_playlist(TEST_PLAYLIST_NAME, TEST_USER, &playlist_content)
@@ -53,7 +54,7 @@ fn save_playlist_is_idempotent() {
 		.playlist_manager
 		.read_playlist(TEST_PLAYLIST_NAME, TEST_USER)
 		.unwrap();
-	assert_eq!(songs.len(), 13);
+	assert_eq!(songs.len(), TEST_ALL_SONGS_COUNT);
 }
 
 #[test]
@@ -92,7 +93,7 @@ fn read_playlist_golden_path() {
 		.into_iter()
 		.map(|s| s.path)
 		.collect();
-	assert_eq!(playlist_content.len(), 13);
+	assert_eq!(playlist_content.len(), TEST_ALL_SONGS_COUNT);
 
 	ctx.playlist_manager
 		.save_playlist(TEST_PLAYLIST_NAME, TEST_USER, &playlist_content)
@@ -103,7 +104,7 @@ fn read_playlist_golden_path() {
 		.read_playlist(TEST_PLAYLIST_NAME, TEST_USER)
 		.unwrap();
 
-	assert_eq!(songs.len(), 13);
+	assert_eq!(songs.len(), TEST_ALL_SONGS_COUNT);
 	assert_eq!(songs[0].title, Some("Above The Water".to_owned()));
 
 	let first_song_path: PathBuf = [

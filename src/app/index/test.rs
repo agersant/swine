@@ -8,6 +8,8 @@ use crate::db::{directories, songs};
 use crate::test_name;
 
 const TEST_MOUNT_NAME: &str = "root";
+const TEST_ALL_SONGS_COUNT: usize = 13;
+const TEST_DIRECTORIES_COUNT: usize = 6;
 
 #[test]
 fn update_adds_new_content() {
@@ -21,8 +23,8 @@ fn update_adds_new_content() {
 	let connection = ctx.db.connect().unwrap();
 	let all_directories: Vec<Directory> = directories::table.load(&connection).unwrap();
 	let all_songs: Vec<Song> = songs::table.load(&connection).unwrap();
-	assert_eq!(all_directories.len(), 6);
-	assert_eq!(all_songs.len(), 13);
+	assert_eq!(all_directories.len(), TEST_DIRECTORIES_COUNT);
+	assert_eq!(all_songs.len(), TEST_ALL_SONGS_COUNT);
 }
 
 #[test]
@@ -50,8 +52,8 @@ fn update_removes_missing_content() {
 		let connection = ctx.db.connect().unwrap();
 		let all_directories: Vec<Directory> = directories::table.load(&connection).unwrap();
 		let all_songs: Vec<Song> = songs::table.load(&connection).unwrap();
-		assert_eq!(all_directories.len(), 6);
-		assert_eq!(all_songs.len(), 13);
+		assert_eq!(all_directories.len(), TEST_DIRECTORIES_COUNT);
+		assert_eq!(all_songs.len(), TEST_ALL_SONGS_COUNT);
 	}
 
 	let khemmis_directory = test_collection_dir.join("Khemmis");
@@ -95,14 +97,14 @@ fn can_browse_directory() {
 	let files = ctx.index.browse(Path::new(TEST_MOUNT_NAME)).unwrap();
 
 	assert_eq!(files.len(), 2);
-	match files[0] {
-		CollectionFile::Directory(ref d) => assert_eq!(d.path, khemmis_path.to_str().unwrap()),
-		_ => panic!("Expected directory"),
-	}
-
-	match files[1] {
-		CollectionFile::Directory(ref d) => assert_eq!(d.path, tobokegao_path.to_str().unwrap()),
-		_ => panic!("Expected directory"),
+	if let (CollectionFile::Directory(ref d1), CollectionFile::Directory(ref d2)) =
+		(&files[0], &files[1])
+	{
+		if d1.path == khemmis_path.to_str().unwrap() {
+			assert_eq!(d2.path, tobokegao_path.to_str().unwrap());
+		} else {
+			assert_eq!(d2.path, khemmis_path.to_str().unwrap());
+		}
 	}
 }
 
@@ -113,7 +115,7 @@ fn can_flatten_root() {
 		.build();
 	ctx.index.update().unwrap();
 	let songs = ctx.index.flatten(Path::new(TEST_MOUNT_NAME)).unwrap();
-	assert_eq!(songs.len(), 13);
+	assert_eq!(songs.len(), TEST_ALL_SONGS_COUNT);
 	assert_eq!(songs[0].title, Some("Above The Water".to_owned()));
 }
 
@@ -233,4 +235,122 @@ fn album_art_pattern_is_case_insensitive() {
 			Some(artwork_virtual_path.to_string_lossy().into_owned())
 		);
 	}
+}
+
+#[test]
+fn query_string_empty_string() {
+	let query = QueryFields {
+		general_query: Some("".to_string()),
+		..Default::default()
+	};
+	assert_eq!(query, parse_query(""));
+}
+
+#[test]
+fn query_string_generic_query() {
+	let query = QueryFields {
+		general_query: Some("generic query".to_string()),
+		..Default::default()
+	};
+	assert_eq!(query, parse_query("generic query"));
+}
+
+#[test]
+fn query_string_tokern_empty_string() {
+	let query = QueryFields {
+		general_query: Some("".to_string()),
+		..Default::default()
+	};
+	assert_eq!(query, parse_query("artist:"));
+}
+#[test]
+fn query_string_token_at_start() {
+	let query = QueryFields {
+		general_query: Some("generic query".to_string()),
+		composer: Some("%test_composer%".to_string()),
+		..Default::default()
+	};
+	assert_eq!(query, parse_query("composer:TEST_COMPOSER generic query"));
+}
+
+#[test]
+fn query_string_token_at_end() {
+	let query = QueryFields {
+		general_query: Some("generic query".to_string()),
+		composer: Some("%est composer%".to_string()),
+		..Default::default()
+	};
+	assert_eq!(
+		query,
+		parse_query("generic query composer:\"est COMPOSER\"")
+	);
+}
+
+#[test]
+fn query_string_token_in_the_middle() {
+	let query = QueryFields {
+		general_query: Some("generic query generic2 query2".to_string()),
+		composer: Some("%test composer%".to_string()),
+		..Default::default()
+	};
+	assert_eq!(
+		query,
+		parse_query("generic query composer:'TEST COMPOSER'  generic2  query2 ")
+	);
+}
+
+#[test]
+// Repeated tokens are considered malformed query string.
+fn query_string_repeated_token_should_not_be_parsed() {
+	let query = QueryFields {
+		general_query: Some(
+			"artist:\" singer1 \" generic query artist:'singer2 ' generic2 query2".to_string(),
+		),
+		..Default::default()
+	};
+	assert_eq!(
+		query,
+		parse_query(
+			"  artist:\"  SinGer1 \"  generic \t query \n artist:'SINGER2 '  generic2  query2  "
+		)
+	);
+}
+
+#[test]
+fn query_string_multiple_space_trim() {
+	let query = QueryFields {
+		general_query: Some("generic query generic2 query2".to_string()),
+		composer: Some("%first1 last1%".to_string()),
+		artist: Some("%first2 last2%".to_string()),
+		..Default::default()
+	};
+	assert_eq!(
+		query,
+		parse_query(
+			"  artist:\"  fIrst2  LasT2 \"  generic \t query \n composer:'FiRST1 LAST1  '  \
+		   generic2  query2  "
+		)
+	);
+}
+
+#[test]
+fn query_string_all_fields() {
+	let query = QueryFields {
+		general_query: Some("generic query generic2 query2".to_string()),
+		composer: Some("%first1 last1%".to_string()),
+		artist: Some("%first2 last2%".to_string()),
+		lyricist: Some("%lyricist1%".to_string()),
+		album: Some("%album1%".to_string()),
+		album_artist: Some("%album_artist1%".to_string()),
+		title: Some("%part of title%".to_string()),
+		genre: Some("%genre1%".to_string()),
+	};
+	assert_eq!(
+		query,
+		parse_query(
+			"  artist:\"  fIrst2  LasT2 \"  generic \t query \n composer:'FiRST1 LAST1  '  \
+		   generic2  query2  lyricist:lyricist1 title:'Part OF TITLE' album:'album1' album_artist:\
+		   'album_artist1' genre:genre1"
+		)
+	);
 }
