@@ -23,7 +23,8 @@ use std::str;
 use crate::app::{
 	config, ddns,
 	index::{self, Index},
-	lastfm, playlist, settings, thumbnail, user, vfs,
+	lastfm, playlist, settings, thumbnail, user,
+	vfs::{self, MountDir},
 };
 use crate::service::{dto, error::*};
 
@@ -206,7 +207,7 @@ impl FromRequest for Auth {
 				})
 				.await?;
 				return Ok(Auth {
-					username: authorization.username.to_owned(),
+					username: authorization.username,
 					source: AuthSource::QueryParameter,
 				});
 			}
@@ -219,7 +220,7 @@ impl FromRequest for Auth {
 				})
 				.await?;
 				return Ok(Auth {
-					username: authorization.username.to_owned(),
+					username: authorization.username,
 					source: AuthSource::AuthorizationBearer,
 				});
 			}
@@ -458,7 +459,7 @@ async fn put_mount_dirs(
 	vfs_manager: Data<vfs::Manager>,
 	new_mount_dirs: Json<Vec<dto::MountDir>>,
 ) -> Result<HttpResponse, APIError> {
-	let new_mount_dirs = new_mount_dirs
+	let new_mount_dirs: Vec<MountDir> = new_mount_dirs
 		.to_owned()
 		.into_iter()
 		.map(|m| m.into())
@@ -515,10 +516,8 @@ async fn update_user(
 	user_update: Json<dto::UserUpdate>,
 ) -> Result<HttpResponse, APIError> {
 	if let Some(auth) = &admin_rights.auth {
-		if auth.username == name.as_str() {
-			if user_update.new_is_admin == Some(false) {
-				return Err(APIError::OwnAdminPrivilegeRemoval);
-			}
+		if auth.username == name.as_str() && user_update.new_is_admin == Some(false) {
+			return Err(APIError::OwnAdminPrivilegeRemoval);
 		}
 	}
 

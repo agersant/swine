@@ -34,11 +34,12 @@ impl From<MountDir> for Mount {
 		let source = PathBuf::from(path_string.deref());
 		Self {
 			name: m.name,
-			source: source,
+			source,
 		}
 	}
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct VFS {
 	mounts: Vec<Mount>,
 }

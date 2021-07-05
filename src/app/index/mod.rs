@@ -1,4 +1,3 @@
-use diesel;
 use log::error;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
@@ -31,7 +30,12 @@ impl Index {
 			db,
 			vfs_manager,
 			settings_manager,
-			pending_reindex: Arc::new((Mutex::new(false), Condvar::new())),
+
+			pending_reindex: Arc::new((
+				#[allow(clippy::clippy::mutex_atomic)]
+				Mutex::new(false),
+				Condvar::new(),
+			)),
 		};
 
 		let commands_index = index.clone();

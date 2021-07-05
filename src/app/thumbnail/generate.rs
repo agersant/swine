@@ -23,7 +23,7 @@ pub fn generate_thumbnail(image_path: &Path, options: &Options) -> Result<Dynami
 	} else if options.pad_to_square {
 		let scaled_image = source_image.thumbnail(out_dimension, out_dimension);
 		let (scaled_width, scaled_height) = scaled_image.dimensions();
-		let background = image::Rgb([255, 255 as u8, 255 as u8]);
+		let background = image::Rgb([255, 255_u8, 255_u8]);
 		final_image = DynamicImage::ImageRgb8(ImageBuffer::from_pixel(
 			out_dimension,
 			out_dimension,

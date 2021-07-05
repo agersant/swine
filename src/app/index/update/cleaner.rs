@@ -1,5 +1,4 @@
 use anyhow::*;
-use diesel;
 use diesel::prelude::*;
 use rayon::prelude::*;
 use std::path::Path;

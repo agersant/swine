@@ -30,7 +30,7 @@ impl Manager {
 		Ok(mount_dirs)
 	}
 
-	pub fn set_mount_dirs(&self, mount_dirs: &Vec<MountDir>) -> Result<()> {
+	pub fn set_mount_dirs(&self, mount_dirs: &[MountDir]) -> Result<()> {
 		use self::mount_points::dsl::*;
 		let connection = self.db.connect()?;
 		diesel::delete(mount_points).execute(&connection)?;

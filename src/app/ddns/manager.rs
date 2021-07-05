@@ -3,7 +3,6 @@ use diesel::prelude::*;
 use log::{error, info};
 use std::thread;
 use std::time;
-use ureq;
 
 use super::*;
 use crate::db::DB;

@@ -49,7 +49,7 @@ impl Traverser {
 		let num_threads = std::env::var_os(key)
 			.map(|v| v.to_string_lossy().to_string())
 			.and_then(|v| usize::from_str(&v).ok())
-			.unwrap_or(min(num_cpus::get(), 4));
+			.unwrap_or_else(|| min(num_cpus::get(), 4));
 		info!("Browsing collection using {} threads", num_threads);
 
 		let mut threads = Vec::new();
@@ -107,14 +107,12 @@ impl Worker {
 			if self.is_all_work_done() {
 				return None;
 			}
+			if let Ok(w) = self
+				.work_item_receiver
+				.recv_timeout(Duration::from_millis(100))
 			{
-				if let Ok(w) = self
-					.work_item_receiver
-					.recv_timeout(Duration::from_millis(100))
-				{
-					return Some(w);
-				}
-			};
+				return Some(w);
+			}
 		}
 	}
 
@@ -167,12 +165,10 @@ impl Worker {
 
 			if path.is_dir() {
 				sub_directories.push(path);
+			} else if let Some(metadata) = metadata::read(&path) {
+				songs.push(Song { path, metadata });
 			} else {
-				if let Some(metadata) = metadata::read(&path) {
-					songs.push(Song { path, metadata });
-				} else {
-					other_files.push(path);
-				}
+				other_files.push(path);
 			}
 		}
 
@@ -180,7 +176,7 @@ impl Worker {
 
 		self.emit_directory(Directory {
 			path: work_item.path.to_owned(),
-			parent: work_item.parent.map(|p| p.to_owned()),
+			parent: work_item.parent,
 			songs,
 			other_files,
 			created,
@@ -195,7 +191,7 @@ impl Worker {
 	}
 
 	fn get_date_created(path: &Path) -> Option<i32> {
-		if let Ok(t) = fs::metadata(path).and_then(|m| m.created().or(m.modified())) {
+		if let Ok(t) = fs::metadata(path).and_then(|m| m.created().or_else(|_| m.modified())) {
 			t.duration_since(std::time::UNIX_EPOCH)
 				.map(|d| d.as_secs() as i32)
 				.ok()

@@ -12,6 +12,7 @@ macro_rules! match_ignore_case {
 }
 pub use crate::match_ignore_case;
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, PartialEq)]
 pub enum AudioFormat {
 	AIFF,

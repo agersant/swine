@@ -106,6 +106,6 @@ impl Paths {
 			paths.log_file_path = None;
 		};
 
-		return paths;
+		paths
 	}
 }

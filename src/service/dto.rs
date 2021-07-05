@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::app::{config, ddns, settings, thumbnail, user, vfs};
+use std::convert::From;
 
 pub const API_MAJOR_VERSION: i32 = 6;
 pub const API_MINOR_VERSION: i32 = 0;
@@ -60,6 +61,7 @@ pub enum ThumbnailSize {
 	Native,
 }
 
+#[allow(clippy::clippy::clippy::from_over_into)]
 impl Into<Option<u32>> for ThumbnailSize {
 	fn into(self) -> Option<u32> {
 		match self {

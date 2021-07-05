@@ -1,6 +1,5 @@
 use anyhow::Result;
 use core::clone::Clone;
-use diesel;
 use diesel::prelude::*;
 use diesel::sql_types;
 use diesel::BelongingToDsl;
@@ -171,7 +170,7 @@ impl Manager {
 			ORDER BY ps.ordering
 		"#,
 			);
-			let query = query.clone().bind::<sql_types::Integer, _>(playlist.id);
+			let query = query.bind::<sql_types::Integer, _>(playlist.id);
 			songs = query.get_results(&connection).map_err(anyhow::Error::new)?;
 		}
 

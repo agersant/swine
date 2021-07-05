@@ -1,12 +1,6 @@
 use anyhow::*;
-use ape;
-use id3;
 use lewton::inside_ogg::OggStreamReader;
 use log::error;
-use metaflac;
-use mp3_duration;
-use mp4ameta;
-use opus_headers;
 use regex::Regex;
 use std::fs;
 use std::path::Path;
@@ -52,13 +46,13 @@ impl From<id3::Tag> for SongTags {
 		let label = tag.get_text("TPUB");
 
 		SongTags {
+			disc_number,
+			track_number,
+			title,
+			duration,
 			artist,
 			album_artist,
 			album,
-			title,
-			duration,
-			disc_number,
-			track_number,
 			year,
 			has_artwork,
 			lyricist,
@@ -296,7 +290,7 @@ fn read_flac(path: &Path) -> Result<SongTags> {
 	let tag = metaflac::Tag::read_from_path(path)?;
 	let vorbis = tag
 		.vorbis_comments()
-		.ok_or(anyhow!("Missing Vorbis comments"))?;
+		.ok_or_else(|| anyhow!("Missing Vorbis comments"))?;
 	let disc_number = vorbis
 		.get("DISCNUMBER")
 		.and_then(|d| d[0].parse::<u32>().ok());

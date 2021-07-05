@@ -2,7 +2,6 @@ use anyhow::*;
 use diesel::r2d2::{self, ConnectionManager, PooledConnection};
 use diesel::sqlite::SqliteConnection;
 use diesel::RunQueryDsl;
-use diesel_migrations;
 use std::path::Path;
 
 mod schema;
@@ -34,7 +33,7 @@ impl diesel::r2d2::CustomizeConnection<SqliteConnection, diesel::r2d2::Error>
 		);
 		query
 			.execute(connection)
-			.map_err(|e| diesel::r2d2::Error::QueryError(e))?;
+			.map_err(diesel::r2d2::Error::QueryError)?;
 		Ok(())
 	}
 }
@@ -46,7 +45,7 @@ impl DB {
 		let pool = diesel::r2d2::Pool::builder()
 			.connection_customizer(Box::new(ConnectionCustomizer {}))
 			.build(manager)?;
-		let db = DB { pool: pool };
+		let db = DB { pool };
 		db.migrate_up()?;
 		Ok(db)
 	}

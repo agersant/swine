@@ -24,11 +24,8 @@ impl Collector {
 	}
 
 	pub fn collect(&self) {
-		loop {
-			match self.receiver.recv() {
-				Ok(directory) => self.collect_directory(directory),
-				Err(_) => break,
-			}
+		while let Ok(directory) = self.receiver.recv() {
+			self.collect_directory(directory);
 		}
 	}
 

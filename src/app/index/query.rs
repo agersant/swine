@@ -1,5 +1,4 @@
 use anyhow::*;
-use diesel;
 use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::sql_types;
@@ -89,7 +88,7 @@ impl Index {
 				.virtual_to_real(virtual_path)
 				.map_err(|_| QueryError::VFSPathNotFound)?;
 			let song_path_filter = {
-				let mut path_buf = real_path.clone();
+				let mut path_buf = real_path;
 				path_buf.push("%");
 				path_buf.as_path().to_string_lossy().into_owned()
 			};

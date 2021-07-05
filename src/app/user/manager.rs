@@ -1,5 +1,4 @@
 use anyhow::anyhow;
-use diesel;
 use diesel::prelude::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -168,7 +167,7 @@ impl Manager {
 			.filter(name.eq(username))
 			.get_results(&connection)
 			.map_err(|_| Error::Unspecified)?;
-		Ok(results.len() > 0)
+		Ok(!results.is_empty())
 	}
 
 	pub fn is_admin(&self, username: &str) -> Result<bool, Error> {

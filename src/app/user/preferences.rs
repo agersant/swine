@@ -1,5 +1,4 @@
 use anyhow::Result;
-use diesel;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

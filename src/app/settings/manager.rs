@@ -1,4 +1,3 @@
-use diesel;
 use diesel::prelude::*;
 use regex::Regex;
 use std::convert::TryInto;

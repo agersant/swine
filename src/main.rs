@@ -62,7 +62,7 @@ fn init_logging<T: AsRef<Path>>(log_level: LevelFilter, log_file_path: &Option<T
 		}
 		loggers.push(WriteLogger::new(
 			log_level,
-			log_config.clone(),
+			log_config,
 			fs::File::create(path)?,
 		));
 	}

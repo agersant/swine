@@ -61,7 +61,7 @@ impl Manager {
 	}
 
 	pub fn link(&self, username: &str, lastfm_token: &str) -> Result<()> {
-		let mut scrobbler = Scrobbler::new(LASTFM_API_KEY.into(), LASTFM_API_SECRET.into());
+		let mut scrobbler = Scrobbler::new(LASTFM_API_KEY, LASTFM_API_SECRET);
 		let auth_response = scrobbler.authenticate_with_token(lastfm_token)?;
 
 		self.user_manager
@@ -74,7 +74,7 @@ impl Manager {
 	}
 
 	pub fn scrobble(&self, username: &str, track: &Path) -> Result<()> {
-		let mut scrobbler = Scrobbler::new(LASTFM_API_KEY.into(), LASTFM_API_SECRET.into());
+		let mut scrobbler = Scrobbler::new(LASTFM_API_KEY, LASTFM_API_SECRET);
 		let scrobble = self.scrobble_from_path(track)?;
 		let auth_token = self.user_manager.get_lastfm_session_key(username)?;
 		scrobbler.authenticate_with_session_key(&auth_token);
@@ -83,7 +83,7 @@ impl Manager {
 	}
 
 	pub fn now_playing(&self, username: &str, track: &Path) -> Result<()> {
-		let mut scrobbler = Scrobbler::new(LASTFM_API_KEY.into(), LASTFM_API_SECRET.into());
+		let mut scrobbler = Scrobbler::new(LASTFM_API_KEY, LASTFM_API_SECRET);
 		let scrobble = self.scrobble_from_path(track)?;
 		let auth_token = self.user_manager.get_lastfm_session_key(username)?;
 		scrobbler.authenticate_with_session_key(&auth_token);

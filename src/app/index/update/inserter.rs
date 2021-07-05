@@ -1,6 +1,5 @@
 use anyhow::*;
 use crossbeam_channel::Receiver;
-use diesel;
 use diesel::prelude::*;
 use log::error;
 
@@ -57,19 +56,16 @@ impl Inserter {
 		let new_directories = Vec::with_capacity(INDEX_BUILDING_INSERT_BUFFER_SIZE);
 		let new_songs = Vec::with_capacity(INDEX_BUILDING_INSERT_BUFFER_SIZE);
 		Self {
-			db,
 			receiver,
 			new_directories,
 			new_songs,
+			db,
 		}
 	}
 
 	pub fn insert(&mut self) {
-		loop {
-			match self.receiver.recv() {
-				Ok(item) => self.insert_item(item),
-				Err(_) => break,
-			}
+		while let Ok(item) = self.receiver.recv() {
+			self.insert_item(item);
 		}
 	}
 
@@ -91,34 +87,26 @@ impl Inserter {
 	}
 
 	fn flush_directories(&mut self) {
-		if self
-			.db
-			.connect()
-			.and_then(|connection| {
-				diesel::insert_into(directories::table)
-					.values(&self.new_directories)
-					.execute(&*connection) // TODO https://github.com/diesel-rs/diesel/issues/1822
-					.map_err(Error::new)
-			})
-			.is_err()
-		{
+		let res = self.db.connect().and_then(|connection| {
+			diesel::insert_into(directories::table)
+				.values(&self.new_directories)
+				.execute(&*connection) // TODO https://github.com/diesel-rs/diesel/issues/1822
+				.map_err(Error::new)
+		});
+		if res.is_err() {
 			error!("Could not insert new directories in database");
 		}
 		self.new_directories.clear();
 	}
 
 	fn flush_songs(&mut self) {
-		if self
-			.db
-			.connect()
-			.and_then(|connection| {
-				diesel::insert_into(songs::table)
-					.values(&self.new_songs)
-					.execute(&*connection) // TODO https://github.com/diesel-rs/diesel/issues/1822
-					.map_err(Error::new)
-			})
-			.is_err()
-		{
+		let res = self.db.connect().and_then(|connection| {
+			diesel::insert_into(songs::table)
+				.values(&self.new_songs)
+				.execute(&*connection) // TODO https://github.com/diesel-rs/diesel/issues/1822
+				.map_err(Error::new)
+		});
+		if res.is_err() {
 			error!("Could not insert new songs in database");
 		}
 		self.new_songs.clear();
@@ -127,10 +115,10 @@ impl Inserter {
 
 impl Drop for Inserter {
 	fn drop(&mut self) {
-		if self.new_directories.len() > 0 {
+		if !self.new_directories.is_empty() {
 			self.flush_directories();
 		}
-		if self.new_songs.len() > 0 {
+		if !self.new_songs.is_empty() {
 			self.flush_songs();
 		}
 	}
